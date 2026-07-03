@@ -216,9 +216,25 @@ const bgm = new Audio(BASE + "gamemusic.mp3");
 bgm.loop = true;
 bgm.volume = 0.45;
 bgm.preload = "auto";
+const clearBgm = new Audio(BASE + "gamemusicclear.mp3");
+clearBgm.loop = false;          // クリアBGMは1回のみ
+clearBgm.volume = 0.55;
+clearBgm.preload = "auto";
 function tryPlayBgm(){
   if(!bgmOn) return;
+  if(typeof phase!=="undefined" && phase==="clear") return; // クリア中は通常BGMを鳴らさない
   bgm.play().catch(()=>{ /* 自動再生がブロックされた場合は次の操作で再試行 */ });
+}
+function playClearBgm(){
+  bgm.pause();                  // 通常BGMを停止
+  if(bgmOn){
+    clearBgm.currentTime = 0;
+    clearBgm.play().catch(()=>{});
+  }
+}
+function stopClearBgm(){
+  clearBgm.pause();
+  clearBgm.currentTime = 0;
 }
 // 最初のユーザー操作で確実に再生開始(ブラウザの自動再生制限対策)
 ["pointerdown","keydown"].forEach(ev=>{
@@ -252,6 +268,8 @@ function resetGame(){
   });
   message = "ふねに のせる ひとを えらんでね\n（こげるのは ちち・はは・メイド）";
   hide("overScreen"); hide("clearScreen");
+  stopClearBgm();
+  tryPlayBgm();                 // 通常BGMを再開
   updateButtons();
 }
 
@@ -399,7 +417,8 @@ async function playDanger(violations){
 async function playClear(){
   phase = "clear"; updateButtons();
   message = "";
-  SFX.clear();
+  playClearBgm();               // クリアBGM(1回のみ)・通常BGM停止
+  if(!bgmOn) SFX.clear();       // BGMがOFFのときはビープのファンファーレで代用
   animT0 = performance.now();
   await wait(1200);
   document.getElementById("clearMsg").textContent =
@@ -605,7 +624,7 @@ document.getElementById("btnSound").onclick = function(){
 document.getElementById("btnBgm").onclick = function(){
   bgmOn = !bgmOn;
   this.textContent = bgmOn ? "BGM:ON" : "BGM:OFF";
-  if(bgmOn){ tryPlayBgm(); } else { bgm.pause(); }
+  if(bgmOn){ tryPlayBgm(); } else { bgm.pause(); clearBgm.pause(); }
 };
 document.getElementById("btnRetry").onclick = ()=>{ SFX.select(); resetGame(); };
 document.getElementById("btnAgain").onclick = ()=>{ SFX.select(); resetGame(); };
