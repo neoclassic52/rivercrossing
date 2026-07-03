@@ -119,6 +119,7 @@
   <button class="pxbtn" id="btnUndo">ひとつもどす</button>
   <button class="pxbtn" id="btnReset">さいしょから</button>
   <button class="pxbtn" id="btnSound">おと:ON</button>
+  <button class="pxbtn" id="btnBgm">BGM:ON</button>
 </div>
 
 <script>
@@ -208,6 +209,21 @@ const SFX = {
   danger : ()=>{ [740,698,622,587,466,415].forEach((f,i)=>beep(f,0.16,"square",0.14,i*0.14)); },
   clear  : ()=>{ [523,659,784,1047,784,1047,1319].forEach((f,i)=>beep(f,0.15,"square",0.13,i*0.13)); }
 };
+
+/* ---------------- BGM ---------------- */
+let bgmOn = true;
+const bgm = new Audio(BASE + "gamemusic.mp3");
+bgm.loop = true;
+bgm.volume = 0.45;
+bgm.preload = "auto";
+function tryPlayBgm(){
+  if(!bgmOn) return;
+  bgm.play().catch(()=>{ /* 自動再生がブロックされた場合は次の操作で再試行 */ });
+}
+// 最初のユーザー操作で確実に再生開始(ブラウザの自動再生制限対策)
+["pointerdown","keydown"].forEach(ev=>{
+  document.addEventListener(ev, ()=>{ initAudio(); tryPlayBgm(); }, {once:false});
+});
 
 /* ---------------- ゲーム状態 ---------------- */
 let pos = {};            // id -> "L" | "R" | "BOAT"
@@ -585,6 +601,11 @@ document.getElementById("btnSound").onclick = function(){
   soundOn = !soundOn;
   this.textContent = soundOn ? "おと:ON" : "おと:OFF";
   if(soundOn){ initAudio(); SFX.select(); }
+};
+document.getElementById("btnBgm").onclick = function(){
+  bgmOn = !bgmOn;
+  this.textContent = bgmOn ? "BGM:ON" : "BGM:OFF";
+  if(bgmOn){ tryPlayBgm(); } else { bgm.pause(); }
 };
 document.getElementById("btnRetry").onclick = ()=>{ SFX.select(); resetGame(); };
 document.getElementById("btnAgain").onclick = ()=>{ SFX.select(); resetGame(); };
